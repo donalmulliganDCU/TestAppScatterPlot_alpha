@@ -1,54 +1,92 @@
-# 991867
-
+# app.py
 import io
-from typing import List, Tuple
+from pathlib import Path
+from typing import List, Tuple, Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
+# ---------- Page config & basic theme ----------
 st.set_page_config(
-    page_title="TestApp alpha",
-    page_icon="📈",   # or "assets/favicon.png"
-    layout="centered"
+    page_title="TestApp Scatter Plot",
+    page_icon="📈",
+    layout="centered",
 )
 
-from pathlib import Path
-LOGO = Path("assets/logo_white-on-transparent.png")  # add your file
-if LOGO.exists():
-    st.image(str(LOGO), width=180)
+# Test logo
+LOGO = Path("assets/logo_black-on-transparent.png")
 
-TITLE = "TestApp alpha - Just trying to get things working"
+# ---------- Helper functions ----------
+def parse_numeric(value) -> Tuple[bool, Optional[float], Optional[str]]:
+    """
+    Return (ok, number|None, reason|None).
+    Reasons: empty | non-numeric | zero
+    """
+    if pd.isna(value):
+        return False, None, "empty"
+    try:
+        num = float(str(value).strip())
+    except ValueError:
+        return False, None, "non-numeric"
+    if num == 0:
+        return False, None, "zero"
+    return True, num, None
+
+def validate_and_prepare(df: pd.DataFrame) -> Tuple[int, int, Optional[int]]:
+    """
+    Validate CSV-level rules and return column indices.
+    Requires 'inputs' and 'outputs'; 'labels' is optional.
+    Raises ValueError with clear messages.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError("The uploaded file could not be read as a CSV.")
+
+    cols = list(df.columns)
+    if "inputs" not in cols or "outputs" not in cols:
+        raise ValueError("The CSV must contain header columns named exactly 'inputs' and 'outputs'.")
+
+    if df.shape[0] == 0:
+        raise ValueError("The CSV has the required columns but contains no records.")
+
+    ix_in = cols.index("inputs")
+    ix_out = cols.index("outputs")
+    ix_label = cols.index("labels") if "labels" in cols else None
+    return ix_in, ix_out, ix_label
+
+# ---------- Branding / styling (Parts 1–3) ----------
+# Theme variables with fallbacks (so CSS adapts to light/dark)
+primary = st.get_option("theme.primaryColor") or "#0F766E"
+secondary_bg = st.get_option("theme.secondaryBackgroundColor") or "#F6F8FA"
 
 st.markdown(
-    """
+    f"""
     <style>
-      .hero {
+      :root {{
+        --primary-color: {primary};
+        --secondary-background-color: {secondary_bg};
+      }}
+      .hero {{
         padding: 1.25rem 1.25rem;
         border-radius: 14px;
         background: var(--secondary-background-color);
         border: 1px solid rgba(0,0,0,0.06);
         margin-bottom: 1rem;
-      }
-      .badge {
+      }}
+      .badge {{
         display:inline-block; padding: 4px 10px; border-radius: 999px;
         background: var(--primary-color); color: white; font-size: 12px;
         margin-bottom: 6px;
-      }
-      .hero h1 { margin: 0.2rem 0 0.4rem 0; }
-      .hero p { margin: 0; color: rgba(0,0,0,0.65);}
-      /* Respect Streamlit theme variables where available */
-      :root {
-        --primary-color: {primary};
-        --secondary-background-color: {secondary_bg};
-      }
+      }}
+      .hero h1 {{ margin: 0.2rem 0 0.4rem 0; }}
+      .hero p {{ margin: 0; opacity: 0.75; }}
     </style>
-    """.format(
-        primary=st.get_option("theme.primaryColor"),
-        secondary_bg=st.get_option("theme.secondaryBackgroundColor"),
-    ),
+    """,
     unsafe_allow_html=True,
 )
+
+if LOGO.exists():
+    st.image(str(LOGO), width=180)
 
 st.markdown(
     """
@@ -62,86 +100,71 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-def parse_numeric(value) -> Tuple[bool, float | None, str | None]:
-    """Return (ok, number|None, reason|None). Reasons: empty | non-numeric | zero."""
-    if pd.isna(value):
-        return False, None, "empty"
-    try:
-        num = float(str(value).strip())
-    except ValueError:
-        return False, None, "non-numeric"
-    if num == 0:
-        return False, None, "zero"
-    return True, num, None
+with st.sidebar:
+    st.header("About")
+    st.write(
+        "This tool validates your CSV and plots **inputs vs outputs**.\n\n"
+        "• Required columns: `inputs`, `outputs`\n"
+        "• Optional: `labels`\n"
+        "• Skips empty, zero, or non-numeric rows"
+    )
+    st.divider()
+    st.caption("© 2025 Your Lab / Dept • v1.0")
 
-def validate_and_prepare(df: pd.DataFrame):
-    """Validate CSV-level rules and prepare indices. Raises ValueError with clear messages."""
-    if not isinstance(df, pd.DataFrame):
-        raise ValueError("The uploaded file could not be read as a CSV.")
-    cols = list(df.columns)
+# ---------- Main UI ----------
+uploaded = st.file_uploader("Choose CSV file", type=["csv"])
 
-    if "inputs" not in cols or "outputs" not in cols:
-        raise ValueError("The CSV must contain header columns named exactly 'inputs' and 'outputs'.")
+if not uploaded:
+    st.info("Awaiting upload…")
+    st.stop()
 
-    if df.shape[0] == 0:
-        raise ValueError("The CSV has the required columns but contains no records.")
+# Read CSV safely
+try:
+    df = pd.read_csv(uploaded)
+except Exception:
+    st.error("The file is not a valid .csv (parse error).")
+    st.stop()
 
-    ix_label = cols.index("labels") if "labels" in cols else None
-    return cols.index("inputs"), cols.index("outputs"), ix_label
+# Validate structure
+try:
+    ix_in, ix_out, ix_label = validate_and_prepare(df)
+except ValueError as e:
+    st.error(str(e))
+    st.stop()
 
-def main():
-    st.title(TITLE)
-    st.markdown("Upload a `.csv` with **inputs**, **outputs**, and optional **labels** columns.")
+# ---------- Process rows ----------
+total_records = int(df.shape[0])  # header is implicit, so records = number of rows
+x_vals: List[float] = []
+y_vals: List[float] = []
+skipped: List[Tuple[int, str, List[str]]] = []  # (row_number, label, reasons)
 
-    uploaded = st.file_uploader("Choose CSV file", type=["csv"])
-    if not uploaded:
-        st.info("Awaiting upload…")
-        return
+for i, row in df.iterrows():
+    # Spreadsheet-friendly row numbers: header row is 1 → first data row is 2
+    row_number = i + 2
+    label = ""
+    if ix_label is not None:
+        maybe = row.iloc[ix_label]
+        if pd.notna(maybe):
+            label = str(maybe).strip()
 
-    # Read CSV safely
-    try:
-        df = pd.read_csv(uploaded)
-    except Exception:
-        st.error("The file is not a valid .csv (parse error).")
-        return
+    in_ok, in_num, in_reason = parse_numeric(row.iloc[ix_in])
+    out_ok, out_num, out_reason = parse_numeric(row.iloc[ix_out])
 
-    try:
-        ix_in, ix_out, ix_label = validate_and_prepare(df)
-    except ValueError as e:
-        st.error(str(e))
-        return
+    if in_ok and out_ok:
+        x_vals.append(in_num)  # type: ignore[arg-type]
+        y_vals.append(out_num)  # type: ignore[arg-type]
+    else:
+        reasons = []
+        if not in_ok:
+            reasons.append(f"inputs is {in_reason}")
+        if not out_ok:
+            reasons.append(f"outputs is {out_reason}")
+        skipped.append((row_number, label, reasons))
 
-    # Summaries
-    total_records = int(df.shape[0])  # excludes header by definition
+plotted_count = len(x_vals)
+skipped_count = len(skipped)
 
-    x_vals, y_vals = [], []
-    skipped: List[Tuple[int, str, List[str]]] = []
-
-    # Iterate rows; keep spreadsheet-friendly row numbers (header would be row 1 → first data row = 2)
-    for i, row in df.iterrows():
-        row_number = i + 2
-        label = ""
-        if ix_label is not None:
-            maybe = row.iloc[ix_label]
-            if pd.notna(maybe):
-                label = str(maybe).strip()
-
-        in_ok, in_num, in_reason = parse_numeric(row.iloc[ix_in])
-        out_ok, out_num, out_reason = parse_numeric(row.iloc[ix_out])
-
-        if in_ok and out_ok:
-            x_vals.append(in_num)
-            y_vals.append(out_num)
-        else:
-            reasons = []
-            if not in_ok: reasons.append(f"inputs is {in_reason}")
-            if not out_ok: reasons.append(f"outputs is {out_reason}")
-            skipped.append((row_number, label, reasons))
-
-    plotted_count = len(x_vals)
-    skipped_count = len(skipped)
-
-    # Metrics
+# ---------- Metric cards (Part 5 replaces st.metric) ----------
 c1, c2, c3 = st.columns(3)
 for c, title, value in [
     (c1, "Records", total_records),
@@ -160,7 +183,7 @@ for c, title, value in [
             unsafe_allow_html=True,
         )
 
-
+# ---------- Tabs for plot vs details (Part 4 replaces the old plot+list block) ----------
 st.divider()
 tab_plot, tab_details = st.tabs(["📊 Plot", "🧾 Details"])
 
@@ -191,7 +214,3 @@ with tab_details:
                 st.write(f"• Record in row **{row_number}**: {reason_text}")
     else:
         st.write("No records skipped.")
-
-
-if __name__ == "__main__":
-    main()
