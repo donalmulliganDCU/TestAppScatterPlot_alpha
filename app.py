@@ -69,7 +69,7 @@ st.markdown(
       .hero {{
         padding: 1.25rem 1.25rem;
         border-radius: 14px;
-        background: var(--secondary-background-color);
+        background: none;
         border: 1px solid rgba(0,0,0,0.06);
         margin-bottom: 1rem;
       }}
