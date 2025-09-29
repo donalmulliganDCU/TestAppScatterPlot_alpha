@@ -1,3 +1,5 @@
+# 991867
+
 import io
 from typing import List, Tuple
 
@@ -5,9 +7,60 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-st.set_page_config(page_title="CSV → Scatter", layout="centered")
+st.set_page_config(
+    page_title="TestApp alpha",
+    page_icon="📈",   # or "assets/favicon.png"
+    layout="centered"
+)
 
-TITLE = "Scatter Plotter (inputs → outputs)"
+from pathlib import Path
+LOGO = Path("assets/logo_white-on-transparent.png")  # add your file
+if LOGO.exists():
+    st.image(str(LOGO), width=180)
+
+TITLE = "TestApp alpha - Just trying to get things working"
+
+st.markdown(
+    """
+    <style>
+      .hero {
+        padding: 1.25rem 1.25rem;
+        border-radius: 14px;
+        background: var(--secondary-background-color);
+        border: 1px solid rgba(0,0,0,0.06);
+        margin-bottom: 1rem;
+      }
+      .badge {
+        display:inline-block; padding: 4px 10px; border-radius: 999px;
+        background: var(--primary-color); color: white; font-size: 12px;
+        margin-bottom: 6px;
+      }
+      .hero h1 { margin: 0.2rem 0 0.4rem 0; }
+      .hero p { margin: 0; color: rgba(0,0,0,0.65);}
+      /* Respect Streamlit theme variables where available */
+      :root {
+        --primary-color: {primary};
+        --secondary-background-color: {secondary_bg};
+      }
+    </style>
+    """.format(
+        primary=st.get_option("theme.primaryColor"),
+        secondary_bg=st.get_option("theme.secondaryBackgroundColor"),
+    ),
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div class="hero">
+      <span class="badge">CSV → Scatter</span>
+      <h1>Scatter Plotter</h1>
+      <p>Upload a <strong>.csv</strong> with <code>inputs</code>, <code>outputs</code>, and
+      optional <code>labels</code>. We’ll validate, plot, and let you download the figure.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 def parse_numeric(value) -> Tuple[bool, float | None, str | None]:
     """Return (ok, number|None, reason|None). Reasons: empty | non-numeric | zero."""
@@ -89,22 +142,29 @@ def main():
     skipped_count = len(skipped)
 
     # Metrics
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Records (excluding header)", f"{total_records}")
-    c2.metric("Records plotted", f"{plotted_count}")
-    c3.metric("Records skipped", f"{skipped_count}")
+c1, c2, c3 = st.columns(3)
+for c, title, value in [
+    (c1, "Records", total_records),
+    (c2, "Plotted", plotted_count),
+    (c3, "Skipped", skipped_count),
+]:
+    with c:
+        st.markdown(
+            f"""
+            <div style="border:1px solid rgba(0,0,0,0.06); padding:12px; border-radius:12px;
+                        background: var(--secondary-background-color); text-align:center;">
+              <div style="font-size:12px; opacity:.7;">{title}</div>
+              <div style="font-size:24px; font-weight:700;">{value}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # Skipped details
-    if skipped_count:
-        st.subheader("Skipped records")
-        for row_number, label, reasons in skipped:
-            reason_text = "; ".join(reasons)
-            if label:
-                st.write(f"• Record in row **{row_number}**, **{label}**: {reason_text}")
-            else:
-                st.write(f"• Record in row **{row_number}**: {reason_text}")
 
-    # Plot
+st.divider()
+tab_plot, tab_details = st.tabs(["📊 Plot", "🧾 Details"])
+
+with tab_plot:
     st.subheader("Scatter plot")
     fig, ax = plt.subplots()
     ax.scatter(x_vals, y_vals)
@@ -119,6 +179,19 @@ def main():
     fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
     buf.seek(0)
     st.download_button("Download plot (PNG)", buf, file_name="output.png", mime="image/png")
+
+with tab_details:
+    st.subheader("Skipped records")
+    if skipped_count:
+        for row_number, label, reasons in skipped:
+            reason_text = "; ".join(reasons)
+            if label:
+                st.write(f"• Record in row **{row_number}**, **{label}**: {reason_text}")
+            else:
+                st.write(f"• Record in row **{row_number}**: {reason_text}")
+    else:
+        st.write("No records skipped.")
+
 
 if __name__ == "__main__":
     main()
