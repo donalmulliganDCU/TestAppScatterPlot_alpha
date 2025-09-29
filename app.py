@@ -95,7 +95,7 @@ st.markdown(
       <h1>Scatter Plotter</h1>
       <p>Upload a <strong>.csv</strong> with <code>inputs</code>, <code>outputs</code>, and
       optional <code>labels</code>. This (text) tool will validate, plot, and let you download the figure.</p>
-      <p>More instructions would appear here, if thhis were a more complex app!</p>
+      <p>More instructions would appear here, if this were a more complex app!</p>
     </div>
     """,
     unsafe_allow_html=True,
