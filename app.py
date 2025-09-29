@@ -7,22 +7,17 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-# ---------- Page config & basic theme ----------
+# ---------- Page config ----------
 st.set_page_config(
-    page_title="TestApp Scatter Plot",
+    page_title="Scatter Plotter",
     page_icon="📈",
     layout="centered",
 )
 
-# Test logo
 LOGO = Path("assets/logo_black-on-transparent.png")
 
-# ---------- Helper functions ----------
+# ---------- Helpers ----------
 def parse_numeric(value) -> Tuple[bool, Optional[float], Optional[str]]:
-    """
-    Return (ok, number|None, reason|None).
-    Reasons: empty | non-numeric | zero
-    """
     if pd.isna(value):
         return False, None, "empty"
     try:
@@ -34,30 +29,28 @@ def parse_numeric(value) -> Tuple[bool, Optional[float], Optional[str]]:
     return True, num, None
 
 def validate_and_prepare(df: pd.DataFrame) -> Tuple[int, int, Optional[int]]:
-    """
-    Validate CSV-level rules and return column indices.
-    Requires 'inputs' and 'outputs'; 'labels' is optional.
-    Raises ValueError with clear messages.
-    """
     if not isinstance(df, pd.DataFrame):
         raise ValueError("The uploaded file could not be read as a CSV.")
-
     cols = list(df.columns)
     if "inputs" not in cols or "outputs" not in cols:
         raise ValueError("The CSV must contain header columns named exactly 'inputs' and 'outputs'.")
-
     if df.shape[0] == 0:
         raise ValueError("The CSV has the required columns but contains no records.")
-
     ix_in = cols.index("inputs")
     ix_out = cols.index("outputs")
     ix_label = cols.index("labels") if "labels" in cols else None
     return ix_in, ix_out, ix_label
 
-# ---------- Branding / styling (Parts 1–3) ----------
-# Theme variables with fallbacks (so CSS adapts to light/dark)
+# ---------- Theme variables & Global CSS ----------
 primary = st.get_option("theme.primaryColor") or "#0F766E"
 secondary_bg = st.get_option("theme.secondaryBackgroundColor") or "#F6F8FA"
+text_color = st.get_option("theme.textColor") or "#0B1221"
+
+# UI font stack: system UI first, Arial fallback; forces sans even if theme fails
+FONT_STACK = (
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, "
+    "'Noto Sans', 'Liberation Sans', 'Helvetica Neue', Helvetica, sans-serif"
+)
 
 st.markdown(
     f"""
@@ -65,7 +58,35 @@ st.markdown(
       :root {{
         --primary-color: {primary};
         --secondary-background-color: {secondary_bg};
+        --text-color: {text_color};
       }}
+      /* Force global sans font stack */
+      html, body, [class^="css"], [data-testid="stAppViewContainer"], .stMarkdown, .stText, .stButton, .stSelectbox {{
+        font-family: {FONT_STACK} !important;
+      }}
+
+      /* Sidebar: primary background + white text */
+      [data-testid="stSidebar"] > div:first-child {{
+        background: var(--primary-color) !important;
+      }}
+      [data-testid="stSidebar"]] {{
+        color: #ffffff !important;
+      }}
+      [data-testid="stSidebar"] * {{
+        color: #ffffff !important;
+      }}
+      [data-testid="stSidebar"] a {{
+        color: #ffffff !important;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }}
+      [data-testid="stSidebar"] .stButton>button {{
+        background: #ffffff !important;
+        color: var(--primary-color) !important;
+        border: 0 !important;
+      }}
+
+      /* Hero block */
       .hero {{
         padding: 1.25rem 1.25rem;
         border-radius: 14px;
@@ -78,13 +99,30 @@ st.markdown(
         background: var(--primary-color); color: white; font-size: 12px;
         margin-bottom: 6px;
       }}
-      .hero h1 {{ margin: 0.2rem 0 0.4rem 0; }}
-      .hero p {{ margin: 0; opacity: 0.75; }}
+      .hero h1 {{ margin: 0.2rem 0 0.4rem 0; font-weight: 700; }}
+      .hero p {{ margin: 0; opacity: 0.8; }}
+
+      /* Metric cards: primary background + white text */
+      .metric-card {{
+        border: 0;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--primary-color);
+        color: white;
+        text-align: center;
+      }}
+      .metric-card .label {{
+        font-size: 12px; opacity: .9;
+      }}
+      .metric-card .value {{
+        font-size: 24px; font-weight: 800;
+      }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
+# ---------- Header / Sidebar ----------
 if LOGO.exists():
     st.image(str(LOGO), width=180)
 
@@ -94,8 +132,7 @@ st.markdown(
       <span class="badge">CSV → Scatter</span>
       <h1>Scatter Plotter</h1>
       <p>Upload a <strong>.csv</strong> with <code>inputs</code>, <code>outputs</code>, and
-      optional <code>labels</code>. This (text) tool will validate, plot, and let you download the figure.</p>
-      <p>More instructions would appear here, if this were a more complex app!</p>
+      optional <code>labels</code>. This text tool will validate, plot, and let you download the figure.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -105,28 +142,25 @@ with st.sidebar:
     st.header("About")
     st.write(
         "This tool validates your CSV and plots **inputs vs outputs**.\n\n"
-        "• Required columns: `inputs`, `outputs`\n\n"
-        "• Optional: `labels`\n\n"
+        "• Required columns: `inputs`, `outputs`\n"
+        "• Optional: `labels`\n"
         "• Skips empty, zero, or non-numeric rows"
     )
     st.divider()
-    st.caption("CC-BY Licence Info etc.")
+    st.caption("© 2025 Your Lab / Dept • v1.0")
 
 # ---------- Main UI ----------
 uploaded = st.file_uploader("Choose CSV file", type=["csv"])
-
 if not uploaded:
     st.info("Awaiting upload…")
     st.stop()
 
-# Read CSV safely
 try:
     df = pd.read_csv(uploaded)
 except Exception:
     st.error("The file is not a valid .csv (parse error).")
     st.stop()
 
-# Validate structure
 try:
     ix_in, ix_out, ix_label = validate_and_prepare(df)
 except ValueError as e:
@@ -134,14 +168,13 @@ except ValueError as e:
     st.stop()
 
 # ---------- Process rows ----------
-total_records = int(df.shape[0])  # header is implicit, so records = number of rows
+total_records = int(df.shape[0])
 x_vals: List[float] = []
 y_vals: List[float] = []
-skipped: List[Tuple[int, str, List[str]]] = []  # (row_number, label, reasons)
+skipped: List[Tuple[int, str, List[str]]] = []
 
 for i, row in df.iterrows():
-    # Spreadsheet-friendly row numbers: header row is 1 → first data row is 2
-    row_number = i + 2
+    row_number = i + 2  # header row is 1
     label = ""
     if ix_label is not None:
         maybe = row.iloc[ix_label]
@@ -165,7 +198,7 @@ for i, row in df.iterrows():
 plotted_count = len(x_vals)
 skipped_count = len(skipped)
 
-# ---------- Metric cards (Part 5 replaces st.metric) ----------
+# ---------- Metric cards (primary background) ----------
 c1, c2, c3 = st.columns(3)
 for c, title, value in [
     (c1, "Records", total_records),
@@ -175,16 +208,15 @@ for c, title, value in [
     with c:
         st.markdown(
             f"""
-            <div style="border:1px solid rgba(0,0,0,0.06); padding:12px; border-radius:12px;
-                        background: var(--secondary-background-color); text-align:center;">
-              <div style="font-size:12px; opacity:.7;">{title}</div>
-              <div style="font-size:24px; font-weight:700;">{value}</div>
+            <div class="metric-card">
+              <div class="label">{title}</div>
+              <div class="value">{value}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-# ---------- Tabs for plot vs details (Part 4 replaces the old plot+list block) ----------
+# ---------- Tabs ----------
 st.divider()
 tab_plot, tab_details = st.tabs(["📊 Plot", "🧾 Details"])
 
@@ -198,7 +230,6 @@ with tab_plot:
     ax.grid(True)
     st.pyplot(fig, clear_figure=True)
 
-    # Download PNG
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
     buf.seek(0)
