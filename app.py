@@ -94,7 +94,8 @@ st.markdown(
       <span class="badge">CSV → Scatter</span>
       <h1>Scatter Plotter</h1>
       <p>Upload a <strong>.csv</strong> with <code>inputs</code>, <code>outputs</code>, and
-      optional <code>labels</code>. We’ll validate, plot, and let you download the figure.</p>
+      optional <code>labels</code>. This (text) tool will validate, plot, and let you download the figure.</p>
+      <p>More instructions would appear here, if thhis were a more complex app!</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -104,12 +105,12 @@ with st.sidebar:
     st.header("About")
     st.write(
         "This tool validates your CSV and plots **inputs vs outputs**.\n\n"
-        "• Required columns: `inputs`, `outputs`\n"
-        "• Optional: `labels`\n"
+        "• Required columns: `inputs`, `outputs`\n\n"
+        "• Optional: `labels`\n\n"
         "• Skips empty, zero, or non-numeric rows"
     )
     st.divider()
-    st.caption("© 2025 Your Lab / Dept • v1.0")
+    st.caption("CC-BY Licence Info etc.")
 
 # ---------- Main UI ----------
 uploaded = st.file_uploader("Choose CSV file", type=["csv"])
