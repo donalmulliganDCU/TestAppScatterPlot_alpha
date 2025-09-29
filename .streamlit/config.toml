@@ -3,9 +3,11 @@
 base="dark"         
 primaryColor="darkMagenta"  # buttons/accents
 textColor = "white"
-linkColor = "plum"
+linkColor = "orchid"
+secondaryBackgroundColor="darkMagenta"
 font="sans-serif"
 codeFont = "monospace"
 
 [theme.sidebar]
 primaryColor = "purple"
+backgroundColor = "darkMagenta"
