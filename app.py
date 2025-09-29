@@ -48,8 +48,8 @@ text_color = st.get_option("theme.textColor") or "#0B1221"
 
 # UI font stack: system UI first, Arial fallback; forces sans even if theme fails
 FONT_STACK = (
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, "
-    "'Noto Sans', 'Liberation Sans', 'Helvetica Neue', Helvetica, sans-serif"
+    "Roboto, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', "
+    "'Helvetica Neue', 'Noto Sans', 'Liberation Sans', Helvetica, sans-serif"
 )
 
 st.markdown(

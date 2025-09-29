@@ -1,8 +1,8 @@
 # .streamlit/config.toml
 [theme]
-base="light"            # or "dark"
+base="light"         
 primaryColor="#991867"  # buttons/accents
 backgroundColor="#FFFFFF"
 secondaryBackgroundColor="#F6F8FA"
 textColor="#0B1221"
-font="sans"             # "serif" | "mono"
+font="sans"
