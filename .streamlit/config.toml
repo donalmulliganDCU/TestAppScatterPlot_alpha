@@ -3,7 +3,7 @@ enableStaticServing = true
 
 [[theme.fontFaces]]
 family = "Montserrat"
-url = "static/Montserrat-VariableFont_wght.ttf"
+url = "app/static/Montserrat-VariableFont_wght.ttf"
 
 [theme]
 primaryColor = "rgb(115, 47, 109)"
