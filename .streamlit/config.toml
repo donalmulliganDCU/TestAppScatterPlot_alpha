@@ -4,11 +4,12 @@ base="light"
 primaryColor="darkmagenta"  # buttons/accents
 textColor = "black"
 linkColor = "orchid"
-backgroundColor = "floralwhite"
-secondaryBackgroundColor="antiquewhite"
+linkUnderline = "purple"
+backgroundColor = "snow"
+secondaryBackgroundColor="linen"
 font="sans-serif"
 codeFont = "monospace"
 
 [theme.sidebar]
-primaryColor = "darkmagenta"
-backgroundColor = "thistle"
+primaryColor = "purple"
+backgroundColor = "floralwhite"
