@@ -1,18 +1,17 @@
 # .streamlit/config.toml
 [theme]
 base="light"         
-primaryColor="darkmagenta"  # buttons/accents
+primaryColor="rgb(115, 47, 109)"
 textColor = "black"
-linkColor = "orchid"
-linkUnderline = "purple"
-backgroundColor = "ivory"
-secondaryBackgroundColor="purple"
-codeBackgroundColor = "plum"
+linkColor = "rgb(139, 51, 129)"
+backgroundColor = "#FCFCFA"
+secondaryBackgroundColor="rgb(161, 75, 144)"
+codeBackgroundColor = "rgb(180, 113, 167)"
 font="sans-serif"
 codeFont = "monospace"
 
 [theme.sidebar]
 textColor = "white"
-primaryColor = "purple"
-backgroundColor = "plum"
-secondaryBackgroundColor = "darkmagenta"
+primaryColor = "rgb(157, 72, 142)"
+backgroundColor = "rgb(139, 51, 129)"
+secondaryBackgroundColor = "rgb(154, 60, 136)"
