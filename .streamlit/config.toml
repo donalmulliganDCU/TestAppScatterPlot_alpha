@@ -1,13 +1,14 @@
 # .streamlit/config.toml
 [theme]
-base="dark"         
-primaryColor="darkMagenta"  # buttons/accents
-textColor = "white"
+base="light"         
+primaryColor="darkmagenta"  # buttons/accents
+textColor = "black"
 linkColor = "orchid"
-secondaryBackgroundColor="darkMagenta"
+backgroundColor = "floralwhite"
+secondaryBackgroundColor="antiquewhite"
 font="sans-serif"
 codeFont = "monospace"
 
 [theme.sidebar]
-primaryColor = "purple"
-backgroundColor = "darkMagenta"
+primaryColor = "darkmagenta"
+backgroundColor = "thistle"
