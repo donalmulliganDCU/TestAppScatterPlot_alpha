@@ -54,7 +54,7 @@ def validate_and_prepare(df: pd.DataFrame) -> Tuple[int, int, Optional[int]]:
     ix_label = cols.index("labels") if "labels" in cols else None
     return ix_in, ix_out, ix_label
 
-# ---------- Branding / styling (Parts 1–3) ----------
+# ---------- Branding / styling
 # Theme variables with fallbacks (so CSS adapts to light/dark)
 primary = st.get_option("theme.primaryColor") or "#0F766E"
 secondary_bg = st.get_option("theme.secondaryBackgroundColor") or "#F6F8FA"
@@ -86,7 +86,7 @@ st.markdown(
 )
 
 if LOGO.exists():
-    st.image(str(LOGO), width=180)
+    st.image(str(LOGO), width=250)
 
 st.markdown(
     """
@@ -109,7 +109,7 @@ with st.sidebar:
         "• Skips empty, zero, or non-numeric rows"
     )
     st.divider()
-    st.caption("© 2025 Your Lab / Dept • v1.0")
+    st.caption("CC-BY 2025")
 
 # ---------- Main UI ----------
 uploaded = st.file_uploader("Choose CSV file", type=["csv"])
@@ -164,7 +164,7 @@ for i, row in df.iterrows():
 plotted_count = len(x_vals)
 skipped_count = len(skipped)
 
-# ---------- Metric cards (Part 5 replaces st.metric) ----------
+# ---------- Metric cards
 c1, c2, c3 = st.columns(3)
 for c, title, value in [
     (c1, "Records", total_records),
@@ -183,7 +183,7 @@ for c, title, value in [
             unsafe_allow_html=True,
         )
 
-# ---------- Tabs for plot vs details (Part 4 replaces the old plot+list block) ----------
+# ---------- Tabs for plot vs details
 st.divider()
 tab_plot, tab_details = st.tabs(["📊 Plot", "🧾 Details"])
 
